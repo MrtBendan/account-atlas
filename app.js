@@ -84,6 +84,27 @@
   const zh = (a, b) => a.localeCompare(b, 'zh-CN');
   const DAY = 864e5;
 
+  // ---------- 到期提醒 (fork 新增) ----------
+  const expList = i => Array.isArray(i.expiries) ? i.expiries.filter(e => e && e.date) : [];
+  const daysLeft = date => Math.round((new Date(date + 'T00:00:00') - new Date(new Date().toDateString())) / DAY);
+  const expText = date => {
+    const n = daysLeft(date);
+    if (n < 0) return `已过期 ${-n} 天`;
+    if (n === 0) return '今天到期';
+    if (n === 1) return '明天到期';
+    return `还有 ${n} 天`;
+  };
+  // 卡片上只露出最近一条 30 天内（或已过期）的事项
+  const expBadge = i => {
+    const items = expList(i).sort((a, b) => a.date < b.date ? -1 : 1).filter(e => daysLeft(e.date) <= 30);
+    if (!items.length) return '';
+    const e = items[0], n = daysLeft(e.date);
+    const cls = n < 0 ? 'exp-overdue' : n <= 7 ? 'exp-soon' : '';
+    return `<span class="exp-badge ${cls}">${esc(e.label || '到期')} · ${expText(e.date)}</span>`;
+  };
+  const collectExpiries = () => state.identities.flatMap(i => expList(i).map(e => ({ ...e, identity: i })))
+    .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+
   // ---------- state ----------
   let state = (() => { try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } })();
   const ui = { tab: 'home', cat: '全部', privacy: localStorage.getItem('atlas.privacy') === '1', active: 0, kind: localStorage.getItem('atlas.kind') === 'phone' ? 'phone' : 'email' };
@@ -107,7 +128,7 @@
 
   function demo() {
     const ids = [
-      { id: uid(), type: 'email', value: 'me@gmail.com', label: '主力邮箱', color: COLORS[0], notes: '' },
+      { id: uid(), type: 'email', value: 'me@gmail.com', label: '主力邮箱', color: COLORS[0], notes: '', expiries: [{ id: uid(), label: '示例会员', date: new Date(Date.now() + 5 * DAY).toISOString().slice(0, 10) }] },
       { id: uid(), type: 'phone', value: '+86 138 0000 1234', label: '主力手机号', color: COLORS[1], notes: '移动，已实名' },
       { id: uid(), type: 'email', value: 'shopping.fun@qq.com', label: '购物小号', color: COLORS[3], notes: '' },
       { id: uid(), type: 'email', value: 'dev@outlook.com', label: '开发专用', color: COLORS[4], notes: '' },
@@ -231,7 +252,7 @@
   let toastTimer;
   function toast(msg, action) {
     const t = $('#toast');
-    t.innerHTML = `<img class="ti" src="icon.png?v=4" alt=""><span class="tx"><span class="tn">账号星图</span><span class="tt">${esc(msg)}</span></span>${action ? `<button>${esc(action.label)}</button>` : ''}`;
+    t.innerHTML = `<img class="ti" src="logo.svg?v=5" alt=""><span class="tx"><span class="tn">账号星图</span><span class="tt">${esc(msg)}</span></span>${action ? `<button>${esc(action.label)}</button>` : ''}`;
     if (action) t.querySelector('button').onclick = () => { action.fn(); t.classList.remove('show'); };
     t.classList.add('show');
     clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), action ? 4500 : 2200);
@@ -253,6 +274,7 @@
       <span class="wc-value">${esc(display(i))}</span>
       <span class="wc-foot"><span class="wc-note">${esc(sim ? [car && !(i.notes || '').includes(car.slice(2)) ? car : '', i.notes].filter(Boolean).join(' · ') || '手机号' : i.notes || '邮箱')}</span>
         <span class="stack">${n > 4 ? `<span class="more">+${n - 4}</span>` : ''}${stack}</span></span>
+      ${expBadge(i)}
     </button>`;
   }
   // order the stack so the first app sits on top (row-reverse)
@@ -273,7 +295,7 @@
     renderSeg();
     w.innerHTML = d.map(i => walletCard(i)).join('') +
       (state.identities.length ? `<button class="wcard ghost ${ui.kind === 'phone' ? 'sim' : ''}" data-new="identity" data-type="${ui.kind}"><div>${ICON.plus}添加${word}</div></button>`
-        : `<button class="wcard ghost first" data-new="identity"><img src="icon.png?v=4" alt=""><b>从一个邮箱或手机号开始</b><span>每张卡片记着它注册、绑定过的网站与 App</span><em>${ICON.plus}添加</em></button>`);
+        : `<button class="wcard ghost first" data-new="identity"><img src="logo.svg?v=5" alt=""><b>从一个邮箱或手机号开始</b><span>每张卡片记着它注册、绑定过的网站与 App</span><em>${ICON.plus}添加</em></button>`);
     fixStack(w);
     $('#dots').innerHTML = [...d, 0].map((_, k) => `<i class="${k === ui.active ? 'on' : ''}"></i>`).join('');
     ui.active = Math.min(ui.active, d.length);
@@ -285,6 +307,21 @@
       if (c) w.scrollLeft = cardX(w, c);
       coverflow();
     });
+  }
+
+  // ---------- 到期提醒：首页「即将到期」 (fork 新增) ----------
+  function renderExpiring() {
+    const box = $('#expiring'); if (!box) return;
+    const items = collectExpiries().filter(e => daysLeft(e.date) <= 30);
+    if (!items.length) { box.innerHTML = ''; box.hidden = true; return; }
+    box.hidden = false;
+    box.innerHTML = `<div class="block-head"><div><h2>即将到期</h2><p class="block-sub">30 天内到期，或已过期</p></div></div>
+      <div class="exp-list">${items.map(e => {
+        const n = daysLeft(e.date);
+        const cls = n < 0 ? 'exp-overdue' : n <= 7 ? 'exp-soon' : '';
+        return `<button class="exp-row ${cls}" data-identity="${e.identity.id}"><span class="exp-dot"></span><span class="exp-main"><span class="exp-label">${esc(e.label || '到期')}</span><span class="exp-sub">${esc(e.identity.label || display(e.identity))}</span></span><span class="exp-when">${e.date.slice(5)} · ${expText(e.date)}</span></button>`;
+      }).join('')}</div>`;
+    $$('.exp-row', box).forEach(b => b.onclick = () => showIdentity(b.dataset.identity));
   }
 
   function renderSeg() {
@@ -451,7 +488,7 @@
   let dataVer = 0;   // bumps on every full render; the map rebuilds only when this (or its width) changed
   function render() {
     dataVer++;
-    renderSummary(); renderWallet(); renderGrid(); renderTimeline(); renderSites();
+    renderSummary(); renderWallet(); renderExpiring(); renderGrid(); renderTimeline(); renderSites();
     $('#menu [data-act="privacy"] span').textContent = ui.privacy ? '显示完整号码' : '隐藏号码';
     if (ui.tab === 'graph') Graph.rebuild(); else Graph.prebuild();
   }
@@ -599,6 +636,7 @@
           <button class="action destructive" data-del-identity="${i.id}">${ICON.trash}删除</button>
         </div>
         ${i.notes ? `<div class="sec-title">备注</div><div class="notes">${esc(i.notes)}</div>` : ''}
+        ${expList(i).length ? `<div class="sec-title">到期提醒</div><div class="exp-list">${expList(i).slice().sort((a, b) => a.date < b.date ? -1 : 1).map(e => { const n = daysLeft(e.date); const cls = n < 0 ? 'exp-overdue' : n <= 7 ? 'exp-soon' : ''; return `<div class="exp-row ${cls}" style="cursor:default"><span class="exp-dot"></span><span class="exp-main"><span class="exp-label">${esc(e.label || '到期')}</span><span class="exp-sub">${e.date}</span></span><span class="exp-when">${expText(e.date)}</span></div>`; }).join('')}</div>` : ''}
         <div class="sec-title">用它注册或绑定的 ${accs.length} 个网站与 App</div>
         <div class="cat-list" style="padding:0">${accs.map(a => reel(a)).join('')}
           <button class="reel" data-new="account" data-preset="${i.id}" style="color:var(--tint)"><span class="icon" style="background:rgba(255,255,255,.08);color:var(--tint)">${ICON.plus}</span><span class="reel-main"><span class="reel-title" style="font-weight:500">添加网站或 App</span></span></button>
@@ -646,11 +684,22 @@
         <div class="group"><div class="colors" id="colors">${COLORS.map(c => `<button class="color ${c === color ? 'active' : ''}" style="--c:${c};--g:${skin(c)}" data-c="${c}" aria-label="${SKINS[c][0]}"><span>${SKINS[c][0]}</span></button>`).join('')}</div></div>
         <div class="sec-title">备注</div>
         <div class="group"><div class="field stack"><textarea id="fNotes" placeholder="运营商、是否实名、找回方式">${esc(i.notes || '')}</textarea></div></div>
+        <div class="sec-title">到期提醒</div>
+        <div class="group" style="padding:12px"><div id="expEditor"></div><button class="pill-btn" id="expAdd" type="button">+ 添加到期事项</button></div>
         <p class="hint">不要在这里填写密码。</p>
       </div>`, { kind: 'form' });
     setTimeout(() => {
+      let exps = (existing?.expiries || []).map(e => ({ id: e.id || uid(), label: e.label || '', date: e.date || '' }));
+      const renderExps = () => {
+        const box = $('#expEditor'); if (!box) return;
+        box.innerHTML = exps.map((e, k) => `<div class="exp-edit"><input data-k="${k}" data-f="label" value="${esc(e.label)}" placeholder="事项名，如会员、服务器" autocapitalize="off" autocorrect="off" spellcheck="false"><input data-k="${k}" data-f="date" type="date" value="${esc(e.date)}"><button type="button" data-del="${k}" aria-label="删除">×</button></div>`).join('') || '<p class="hint">还没有到期事项，比如会员、服务器、域名到期日。</p>';
+        $$('#expEditor input').forEach(inp => inp.addEventListener('input', () => { exps[+inp.dataset.k][inp.dataset.f] = inp.value; preview(); }));
+        $$('#expEditor [data-del]').forEach(btn => btn.onclick = () => { exps.splice(+btn.dataset.del, 1); renderExps(); preview(); });
+      };
+      renderExps();
+      $('#expAdd').onclick = () => { exps.push({ id: uid(), label: '', date: '' }); renderExps(); };
       const preview = () => {
-        const tmp = { id: existing?.id || '_new', type, value: $('#fValue').value.trim() || (type === 'email' ? 'name@example.com' : '+86 138 0000 0000'), label: $('#fLabel').value.trim(), color, notes: $('#fNotes').value.trim() };
+        const tmp = { id: existing?.id || '_new', type, value: $('#fValue').value.trim() || (type === 'email' ? 'name@example.com' : '+86 138 0000 0000'), label: $('#fLabel').value.trim(), color, notes: $('#fNotes').value.trim(), expiries: exps.filter(e => e.date) };
         const html = walletCard(tmp, 'tabindex="-1" data-static');
         const box = $('#preview'); box.innerHTML = html; fixStack(box);
       };
@@ -667,7 +716,7 @@
         const ok = type === 'email' ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) : value.replace(/\D/g, '').length >= 5;
         if (!ok) { const f = $('#valueField'); f.classList.remove('invalid'); void f.offsetWidth; f.classList.add('invalid'); $('#fValue').focus(); toast(type === 'email' ? '邮箱地址格式不对' : '手机号至少要 5 位数字'); return; }
         if (state.identities.some(x => x.value.toLowerCase() === value.toLowerCase() && x.id !== existing?.id)) { toast('这个身份已经添加过了'); return; }
-        const data = { type, value, label: $('#fLabel').value.trim(), color, notes: $('#fNotes').value.trim() };
+        const data = { type, value, label: $('#fLabel').value.trim(), color, notes: $('#fNotes').value.trim(), expiries: exps.filter(e => e.date).map(e => ({ id: e.id, label: e.label.trim(), date: e.date })) };
         let id;
         if (existing) { Object.assign(existing, data); id = existing.id; } else { id = uid(); state.identities.push({ id, ...data }); }
         setKind(type, id); save(); render(); showIdentity(id); toast(existing ? '已保存' : '已添加');
@@ -1339,7 +1388,7 @@
     const cloud = '<svg viewBox="0 0 24 24"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9a4 4 0 0 1-.5 9H7Z"/></svg>';
     if (Sync.on) {
       openSheet(`${closeX}<div class="sheet-body form">
-        <div class="form-hero sync-hero" style="--pc:#0a84ff"><img src="icon.png?v=4" class="icon lg" alt=""><b>加密同步已开启</b><p class="sync-state ${Sync.status.state}" id="syncState">${esc(syncLine())}</p></div>
+        <div class="form-hero sync-hero" style="--pc:#0a84ff"><img src="logo.svg?v=5" class="icon lg" alt=""><b>加密同步已开启</b><p class="sync-state ${Sync.status.state}" id="syncState">${esc(syncLine())}</p></div>
         <div class="group">
           <button class="cell" id="syncNow"><span class="cell-main"><span class="cell-title tint">立即同步</span></span></button>
         </div>

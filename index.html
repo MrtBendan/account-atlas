@@ -11,10 +11,10 @@
   <meta name="description" content="每个邮箱和手机号注册了哪些网站与 App，一眼看清" />
   <title>账号 · Atlas</title>
   <script>try{if(localStorage.getItem("atlas.theme")==="light"){document.documentElement.dataset.theme="light";document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content="default";document.querySelector('meta[name="theme-color"]').content="#f2f2f7"}}catch(e){}</script>
-  <link rel="icon" href="logo.svg?v=4" type="image/svg+xml" />
+  <link rel="icon" href="logo.svg?v=5" type="image/svg+xml" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icon.png?v=4" />
-  <link rel="stylesheet" href="styles.css?v=1795200000" />
+  <link rel="apple-touch-icon" href="logo.svg?v=5" />
+  <link rel="stylesheet" href="styles.css?v=1795309752" />
 </head>
 <body>
   <div class="glow" id="glow"></div>
@@ -52,6 +52,7 @@
       <div class="kind-seg" id="kindSeg" hidden></div>
       <div class="wallet" id="wallet"></div>
       <div class="dots" id="dots"></div>
+      <div id="expiring" hidden></div>
 
       <div class="block">
         <div class="block-head"><div><h2 id="gridTitle"></h2><p class="block-sub" id="gridSub"></p></div><button class="pill-btn" id="gridAdd"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>添加</button></div>
@@ -104,7 +105,7 @@
 
   <div class="toast" id="toast"></div>
   <input type="file" id="fileInput" accept="application/json" hidden />
-  <script src="app.js?v=1795200000"></script>
+  <script src="app.js?v=1795309752"></script>
 <script>if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));</script>
 </body>
 </html>

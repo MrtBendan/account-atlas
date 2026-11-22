@@ -723,3 +723,34 @@ html[data-theme=light] .ord::after{box-shadow:0 14px 30px rgba(0,0,0,.16),0 0 0 
 /* the side-slide of a tab view (translateX ±26px) counted as horizontal overflow; on mobile Chrome that widened
    the layout viewport for the length of the animation and forced two full-page relayouts per tab switch */
 main{overflow-x:clip}
+
+/* ---------- 到期提醒 (fork 新增) ---------- */
+.exp-badge{position:absolute;left:18px;top:58px;display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;background:rgba(0,0,0,.32);color:rgba(255,255,255,.88);font-size:11.5px;font-weight:600;letter-spacing:-.01em}
+.exp-badge.exp-soon{background:rgba(255,159,10,.3);color:#ffcf7d}
+.exp-badge.exp-overdue{background:rgba(255,69,58,.32);color:#ff9d97}
+#expiring{margin:22px 20px 0}
+#expiring .block-head{margin-bottom:10px}
+.exp-list{display:flex;flex-direction:column;gap:8px}
+.exp-row{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.08);color:var(--label);text-align:left}
+.exp-row.exp-soon{box-shadow:inset 0 0 0 1px rgba(255,159,10,.55)}
+.exp-row.exp-overdue{box-shadow:inset 0 0 0 1px rgba(255,69,58,.55)}
+.exp-dot{width:8px;height:8px;border-radius:50%;background:var(--secondary);flex:none}
+.exp-row.exp-soon .exp-dot{background:#ff9f0a}
+.exp-row.exp-overdue .exp-dot{background:#ff453a}
+.exp-main{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.exp-label{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exp-sub{font-size:12.5px;color:var(--secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exp-when{font-size:12.5px;color:var(--secondary);white-space:nowrap}
+.exp-row.exp-soon .exp-when{color:#ff9f0a}
+.exp-row.exp-overdue .exp-when{color:#ff453a}
+.exp-edit{display:flex;gap:8px;margin-bottom:8px}
+.exp-edit input{flex:1;min-width:0;padding:9px 10px;border-radius:10px;border:1px solid var(--separator);background:var(--surface);color:var(--label);font-size:15px}
+.exp-edit input[type="date"]{flex:0 0 136px}
+.exp-edit button{flex:none;width:36px;border-radius:10px;border:1px solid var(--separator);background:var(--surface);color:var(--secondary);font-size:18px}
+html[data-theme=light] .exp-row{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+html[data-theme=light] .exp-row.exp-soon{box-shadow:inset 0 0 0 1px rgba(255,159,10,.6)}
+html[data-theme=light] .exp-row.exp-overdue{box-shadow:inset 0 0 0 1px rgba(255,69,58,.6)}
+html[data-theme=light] .exp-row.exp-soon .exp-when{color:#c47a00}
+html[data-theme=light] .exp-row.exp-overdue .exp-when{color:#d70015}
+html[data-theme=light] .exp-badge.exp-soon{color:#b26a00}
+html[data-theme=light] .exp-badge.exp-overdue{color:#d70015}

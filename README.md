@@ -1,4 +1,4 @@
-<p align="center"><img src="icon-512.png" width="112" alt="账号星图"></p>
+<p align="center"><img src="logo.svg" width="112" alt="账号星图"></p>
 <h1 align="center">账号星图 · Atlas</h1>
 <p align="center">这个邮箱注册过什么？那个手机号绑了哪些 App？一眼看清。</p>
 <p align="center">网页 · iOS · 安卓 三端可用，iOS 用 SwiftUI、安卓用 Jetpack Compose 原生编写，数据加密同步互通</p>
@@ -16,6 +16,11 @@
 
 > **开源**：完整源码和提交历史都在本仓库，欢迎[提 Issue](https://github.com/Ckxkx/account-atlas/issues)和 Pull Request。项目自己的 Logo 和图标不在开放范围内，具体见[许可](#许可)。
 > 官方安装包只从本仓库 [Releases](https://github.com/Ckxkx/account-atlas/releases/latest) 和 [huichen.dev](https://huichen.dev/) 发布。App 永久免费，任何收费渠道都不是官方的。
+
+## Fork 实验版
+本仓库是 [Ckxkx/account-atlas](https://github.com/Ckxkx/account-atlas) 的 fork 实验版（GPL-3.0），在线试用：https://mrtbendan.github.io/account-atlas/
+- 新增：到期提醒——给每张身份卡记到期事项（会员、服务器、域名等），卡片上显示倒计时，首页有「即将到期」列表
+- Logo 与图标已换成自己的；原生安卓 / iOS 图标尚未替换，发原生包前须先换掉
 
 ## 它能做什么
 - **卡包**：每个邮箱、手机号都是一张 Wallet 风格的卡，左右翻看，手机号做成 SIM 卡
